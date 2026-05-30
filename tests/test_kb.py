@@ -1,0 +1,15 @@
+import sys
+sys.path.insert(0, ".")
+from src.knowledge.knowledge_bridge import get_knowledge_bridge
+kb = get_knowledge_bridge()
+s = kb.status_report()
+print("Embedded docs:", s["embedded_docs"])
+print("PDF modules:", s["pdf_modules"])
+print("ChromaDB:", s["chromadb_exists"], s["chromadb_size_mb"], "MB")
+print("Photonic PDFs:", s["pdf_relevant_photonic"])
+print("Polariton PDFs:", s["pdf_relevant_polariton"])
+r = kb.query("periodic boundary conditions", domain="photonic_crystal")
+print("Query experiences:", len(r["results"]["experiences"]))
+print("Query pitfalls:", len(r["results"]["template_pitfalls"]))
+print("Query guides:", len(r["results"]["embedded_guides"]))
+print("OK")

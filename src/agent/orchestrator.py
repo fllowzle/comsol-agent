@@ -1,4 +1,4 @@
-﻿# -*- coding: utf-8 -*-
+# -*- coding: utf-8 -*-
 """
 COMSOL Agent - Full-Stack Simulation Automation Platform
 COMSOL Agent - 全栈仿真自动化平台
@@ -68,6 +68,7 @@ from enum import Enum
 from ..knowledge.template_store import get_template_store, SimulationTemplate
 from ..knowledge.paper_parser import PaperInfo, parse_paper, format_for_agent
 from ..knowledge.experience_store import get_experience_store
+from ..knowledge.knowledge_bridge import get_knowledge_bridge
 
 
 # ---------------------------------------------------------------------------
@@ -145,7 +146,8 @@ class AgentOrchestrator:
 
     def __init__(self):
         self.templates = get_template_store()     # Template library / 模板库
-        self.experiences = get_experience_store() # Experience library / 经验库
+        self.experiences = get_experience_store()
+        self.knowledge = get_knowledge_bridge() # Experience library / 经验库
         self._current_task: Optional[SimulationTask] = None
 
     # ==================================================================
@@ -373,6 +375,18 @@ class AgentOrchestrator:
         """
         exp = self.experiences.record_correction(domain=domain, trigger=trigger, symptom=symptom, root_cause="user feedback", fix=fix, template_name=template_name)
         return f"Recorded experience {exp.id}. Future {domain} tasks will auto-apply. / 已记录经验 {exp.id}，后续 {domain} 任务自动应用。"
+
+    def query_knowledge(self, question: str, domain: str = "") -> dict:
+        u"""Query the unified knowledge base across all sources."""
+        return self.knowledge.query(question, domain=domain)
+
+    def get_knowledge_context(self, domain: str = "", topic: str = "") -> str:
+        u"""Get full knowledge context for a simulation task."""
+        return self.knowledge.get_full_context(domain=domain, topic=topic)
+
+    def knowledge_status(self) -> dict:
+        u"""Get knowledge base status."""
+        return self.knowledge.status_report()
 
     def print_status(self):
         """Print Agent status summary / 打印 Agent 状态摘要."""
