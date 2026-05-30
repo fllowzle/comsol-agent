@@ -1,0 +1,17 @@
+﻿# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+
+# IDE
+.vscode/
+.idea/
+
+# Experiments
+experiments/experiences.json
+
+# OS
+.DS_Store
+Thumbs.db

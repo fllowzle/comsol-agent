@@ -1,0 +1,101 @@
+﻿# ============================================================
+# Wu-Hu 光子晶体模型 — 仿真模板
+# 参考: Wu & Hu, PRB 2004 (拓扑光子晶体经典模型)
+# ============================================================
+
+meta:
+  name: "Wu-Hu 光子晶体"
+  domain: photonic_crystal
+  physics_type: electromagnetic_waves
+  dimension: 2D
+  symmetry: hexagonal_lattice
+  difficulty: medium
+  common_pitfalls:
+    - "周期性边界两侧网格必须一致 (conformal mesh)"
+    - "Eigenfrequency求解必须指定搜索中心频率，否则虚部过大"
+    - "六角晶格的k矢量扫描路径为 Γ→M→K→Γ，不可用直线路径"
+
+# ---- 几何参数 ----
+geometry:
+  unit_cell:
+    type: rhombus
+    lattice_constant: { symbol: a, default: "1[um]", description: "晶格常数" }
+    angle: 60
+  scatterer:
+    type: cylinder
+    radius: { symbol: R, default: "0.2*a", description: "柱子半径，相对于a" }
+    material: { symbol: epsilon_rod, default: 11.7, description: "柱子介电常数(Si)" }
+  background:
+    material: { symbol: epsilon_bg, default: 1.0, description: "背景介电常数(空气)" }
+
+# ---- 物理场 ----
+physics:
+  interface: ElectromagneticWavesFrequencyDomain
+  component: comp1
+  polarization: { symbol: polarization, default: TE, options: [TE, TM], description: "偏振模式" }
+  out_of_plane_wave_number: { symbol: kz, default: 0, description: "面外波矢分量" }
+
+# ---- 边界条件 (关键!) ----
+boundary_conditions:
+  periodic:
+    type: PeriodicCondition
+    source_boundaries: [1, 4]
+    destination_boundaries: [2, 3]
+    k_vector:
+      type: parametric
+      symbol: [kx, ky]
+      description: "Bloch波矢，沿布里渊区高对称路径扫描"
+    note: "必须确保源面和目标面的网格节点一一对应"
+
+# ---- 网格 ----
+mesh:
+  type: free_triangular
+  max_element_size: { symbol: mesh_max, default: "a/20", description: "最大网格尺寸" }
+  min_element_size: { symbol: mesh_min, default: "a/100", description: "最小网格尺寸" }
+  critical_check: "源面和目标面的网格节点数必须相等"
+
+# ---- 研究/求解器 ----
+study:
+  type: Eigenfrequency
+  eigenfrequency_count: 8
+  search_around: { symbol: f0, default: "200[THz]", description: "搜索中心频率" }
+  parametric_sweep:
+    parameter: [kx, ky]
+    path: Gamma_M_K_Gamma
+    path_points:
+      - { name: Gamma, kx: 0,     ky: 0 }
+      - { name: M,      kx: 0.5,   ky: 0 }
+      - { name: K,      kx: 0.333, ky: 0.333 }
+      - { name: Gamma,  kx: 0,     ky: 0 }
+    steps: 20
+
+# ---- 后处理 ----
+postprocessing:
+  band_structure:
+    type: point_graph
+    x_axis: k_path_index
+    y_axis: eigenfrequency
+    unit: THz
+    output: band_structure.png
+  field_distribution:
+    type: surface_plot
+    expression: ewfd.normE
+    at_k_point: Gamma
+    at_mode: 1
+    output: field_E_mode1.png
+
+# ---- 验证标准 ----
+validation:
+  checks:
+    - name: "本征频率实部为正"
+      condition: "all(eigenfrequency_real > 0)"
+      severity: critical
+    - name: "本征频率虚部接近零"
+      condition: "all(abs(eigenfrequency_imag) < 1e-3 * abs(eigenfrequency_real))"
+      severity: warning
+    - name: "能带在Gamma点连续"
+      condition: "abs(band_end - band_start_at_gamma) < 5%"
+      severity: info
+    - name: "网格conformal"
+      condition: "mesh_nodes_source == mesh_nodes_dest"
+      severity: critical
