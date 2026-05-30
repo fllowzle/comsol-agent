@@ -8,7 +8,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from src.agent.orchestrator import get_agent
 from src.knowledge.template_store import get_template_store
-from src.knowledge.paper_parser import scan_paper_domain, extract_numeric_params, scan_boundary_conditions
+from src.knowledge.paper_parser import scan_paper_domain, scan_numeric_params_default, scan_boundary_conditions_default
 from src.knowledge.experience_store import get_experience_store
 from src.feedback.solver_diagnostics import SolverDiagnostics, ResultValidator
 
@@ -21,10 +21,10 @@ def test_paper_parsing():
     assert scan["domain"] == "photonic_crystal"
     assert scan["study"] == "eigenfrequency"
     print(f"  PASS: domain={scan['domain']}, study={scan['study']}")
-    params = extract_numeric_params(text)
+    params = scan_numeric_params_default(text)
     assert "permittivity" in params
     print(f"  PASS: params={params}")
-    bcs = scan_boundary_conditions(text)
+    bcs = scan_boundary_conditions_default(text)
     assert any(bc["type"] == "periodic" for bc in bcs)
     print(f"  PASS: BCs={[bc['type'] for bc in bcs]}")
     return True
@@ -139,4 +139,8 @@ def main():
 
 if __name__ == "__main__":
     main()
+
+
+
+
 
